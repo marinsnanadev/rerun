@@ -1,0 +1,50 @@
+.field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--text-s);
+  font-weight: 560;
+}
+
+.optional {
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+
+.control {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.8rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  transition:
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.control:hover {
+  border-color: var(--ink-muted);
+}
+
+.control:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.control[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.hint {
+  color: var(--ink-muted);
+  font-size: var(--text-s);
+}
+
+.error {
+  color: var(--danger);
+  font-size: var(--text-s);
+}

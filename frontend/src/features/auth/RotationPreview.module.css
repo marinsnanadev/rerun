@@ -1,0 +1,61 @@
+.figure {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  max-width: 28rem;
+}
+
+.list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr auto;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+}
+
+.row[data-next='true'] {
+  padding-block: var(--space-4);
+  background: var(--up-next-bg);
+  border-color: var(--up-next-bg);
+  color: var(--up-next-fg);
+}
+
+.position {
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.row[data-next='true'] .position,
+.row[data-next='true'] .when {
+  color: var(--up-next-muted);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--text-l);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.row[data-next='true'] .title {
+  font-size: var(--text-xl);
+}
+
+.when {
+  color: var(--ink-muted);
+  font-size: var(--text-s);
+  white-space: nowrap;
+}
+
+.caption {
+  color: var(--ink-muted);
+  font-size: var(--text-s);
+}
