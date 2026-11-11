@@ -1,0 +1,83 @@
+/*
+ * Design tokens.
+ * Palette: cool fog background, ink text, ultramarine for actions and a signal
+ * amber reserved for "what's next". The "up next" surface inverts per theme.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --font-display: 'Bricolage Grotesque Variable', 'Geist Variable', system-ui, sans-serif;
+  --font-body: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --paper: #e9ecf2;
+  --surface: #f8f9fb;
+  --surface-raised: #ffffff;
+  --ink: #11131a;
+  --ink-muted: #596073;
+  --line: #cbd1dd;
+
+  --accent: #2438d6;
+  --accent-hover: #1b2bb0;
+  --accent-ink: #ffffff;
+  --accent-soft: #dde1fa;
+
+  --signal: #f5b335;
+  --danger: #b3261e;
+  --danger-soft: #f9dedc;
+
+  --up-next-bg: #11131a;
+  --up-next-fg: #f3f4f8;
+  --up-next-muted: #a3a9ba;
+  --up-next-line: #2c3040;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+
+  --radius-s: 6px;
+  --radius-m: 10px;
+  --radius-l: 18px;
+
+  --text-s: 0.875rem;
+  --text-m: 1rem;
+  --text-l: 1.25rem;
+  --text-xl: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  --text-display: clamp(2.25rem, 1.4rem + 3.4vw, 4rem);
+
+  --shadow-lift: 0 1px 2px rgb(17 19 26 / 6%), 0 8px 24px -12px rgb(17 19 26 / 28%);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration: 160ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0e1016;
+    --surface: #171a23;
+    --surface-raised: #1d212c;
+    --ink: #eceef4;
+    --ink-muted: #9aa1b5;
+    --line: #2a2f3d;
+
+    --accent: #8c9bff;
+    --accent-hover: #a9b5ff;
+    --accent-ink: #0e1016;
+    --accent-soft: #252b52;
+
+    --danger: #ff8a80;
+    --danger-soft: #3a1f1d;
+
+    --up-next-bg: #f5b335;
+    --up-next-fg: #14110a;
+    --up-next-muted: #5c4510;
+    --up-next-line: #d99a1f;
+
+    --shadow-lift: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px -12px rgb(0 0 0 / 70%);
+  }
+}
