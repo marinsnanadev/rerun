@@ -1,0 +1,50 @@
+.section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.heading {
+  font-size: var(--text-l);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+}
+
+.position {
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.title {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta,
+.when {
+  color: var(--ink-muted);
+  font-size: var(--text-s);
+}
+
+.when {
+  white-space: nowrap;
+}
+
+.empty {
+  color: var(--ink-muted);
+}
