@@ -10,14 +10,14 @@ cp .env.example .env
 npm run dev
 ```
 
-The app runs at http://localhost:5173.
+The app runs at http://localhost:5173 and talks to the API on http://localhost:8000, so start the backend first (see `../backend/README.md`). To try the UI without a backend, set `VITE_API_MOCK=true` in `.env`.
 
 ## Environment
 
 | Variable        | Default | Purpose                                                              |
 | --------------- | ------- | -------------------------------------------------------------------- |
 | `VITE_API_URL`  | `/api`  | Base URL of the backend. In development, Vite proxies `/api` to it.  |
-| `VITE_API_MOCK` | unset   | Set to `true` to run against a local in-browser mock (no backend).   |
+| `VITE_API_MOCK` | `false` | Set to `true` to run against a local in-browser mock (no backend).   |
 | `VITE_PROXY_TARGET` | `http://localhost:8000` | Where the dev server forwards `/api` requests.       |
 
 ## Scripts

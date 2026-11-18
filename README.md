@@ -1,84 +1,80 @@
-# Looping TV
+# Rerun
 
 A tracker for people who rewatch the same handful of TV series on rotation.
 
-Add the series you keep coming back to, log when you finished each one, and Looping TV tells you which one to watch next: the one you haven't seen for the longest time.
+Add the series you keep coming back to, log when you finished each one, and Rerun tells you which one to watch next: the one you haven't seen for the longest time.
 
 ## How the rotation works
 
 1. Add a series with its title, genre, the date you finished watching it and, optionally, the date you started.
 2. Choose **Add to looping** to put it in your rotation.
-3. Looping TV orders the rotation by last finished date, oldest first. The series at the top is what to watch next.
+3. Rerun orders the rotation by last finished date, oldest first. The series at the top is what to watch next.
 4. When you finish a series, log it with **Finished it**. It moves to the back of the line.
 
 For example, if you finished Community on Sep 19, Modern Family on Aug 15 and The Office on Jul 10, The Office is up next because it has gone the longest without a rewatch.
 
 Series can also be filed as **Would watch again**, **One time thing** or **Pondering**. These are for organization only and don't affect the rotation.
 
-## Run it in your browser
+## Run it
 
-You don't need a backend to try the app. In mock mode everything is stored in your browser.
+You need two terminals: one for the API and one for the web app.
 
 ### Requirements
 
-- [Node.js](https://nodejs.org) 20.19 or newer (check with `node -v`)
-- npm, which comes with Node.js
+- [Python](https://www.python.org) 3.12 or newer
+- [Node.js](https://nodejs.org) 20.19 or newer, with npm
 
-### Steps
+### 1. Start the API
 
-1. Open a terminal in the project folder and go to the frontend:
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+cp .env.example .env             # Windows: copy .env.example .env
+uvicorn app.main:app --reload
+```
 
-   ```bash
-   cd frontend
-   ```
+The API runs at http://localhost:8000, with interactive docs at http://localhost:8000/api/docs.
 
-2. Install the dependencies:
+### 2. Start the web app
 
-   ```bash
-   npm install
-   ```
+```bash
+cd frontend
+npm install
+cp .env.example .env             # Windows: copy .env.example .env
+npm run dev
+```
 
-3. Create your environment file. The example already turns mock mode on.
+Open http://localhost:5173, choose **Create an account**, pick a username and a password with at least 8 characters, and add your first series.
 
-   ```bash
-   # macOS / Linux
-   cp .env.example .env
+The dev server forwards `/api` to the backend, so the browser sees a single origin and the session cookie just works.
 
-   # Windows (Command Prompt)
-   copy .env.example .env
-   ```
+### Try it without the backend
 
-4. Start the app:
-
-   ```bash
-   npm run dev
-   ```
-
-5. Open http://localhost:5173 in your browser.
-
-6. Choose **Create an account**, pick a username and a password with at least 8 characters, and you're in. New accounts start with a few sample series so you can see the rotation right away.
-
-To stop the app, press `Ctrl + C` in the terminal.
-
-### Good to know
-
-- In mock mode, accounts and series live in your browser's `localStorage`. They stay on that browser and device, and they are cleared if you clear the site's data.
-- To start over, open your browser's developer tools, go to **Application** (or **Storage**), and clear the data for `localhost:5173`.
-- Mock passwords are stored as plain text. This is for local development only, so don't reuse a real password.
+Set `VITE_API_MOCK=true` in `frontend/.env` and restart `npm run dev`. Everything is then stored in your browser's `localStorage`, and new accounts start with a few sample series. Mock passwords are stored as plain text, so don't reuse a real one.
 
 ### Build for production
 
 ```bash
+cd frontend
 npm run build     # typechecks, then writes the site to frontend/dist
 npm run preview   # serves the build at http://localhost:4173
+```
+
+## Tests
+
+```bash
+cd backend && pytest
+cd frontend && npm test
 ```
 
 ## Repository layout
 
 ```
-looping-tv/
+rerun/
 ├── frontend/   React + TypeScript single-page app (Vite)
-└── backend/    API (coming next)
+└── backend/    FastAPI + SQLAlchemy API
 ```
 
-See [frontend/README.md](frontend/README.md) for environment variables, scripts and how the source is organized.
+See [frontend/README.md](frontend/README.md) and [backend/README.md](backend/README.md) for configuration, scripts and how each side is organized.
