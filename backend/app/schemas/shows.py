@@ -121,10 +121,30 @@ class ShowPatch(ApiModel):
         return self
 
 
+class WatchCreate(ApiModel):
+    model_config = ConfigDict(extra="forbid")
+
+    started_on: date | None = None
+    finished_on: date
+
+    @model_validator(mode="after")
+    def _valid_dates(self) -> Self:
+        check_dates(self.started_on, self.finished_on)
+        return self
+
+
+class WatchOut(ApiModel):
+    id: str
+    started_on: date | None
+    finished_on: date
+
+
 class ShowOut(ApiModel):
     id: str
     title: str
     genre: Genre
     status: ShowStatus
+    # Dates of the latest watch.
     started_on: date | None
     finished_on: date
+    watch_count: int

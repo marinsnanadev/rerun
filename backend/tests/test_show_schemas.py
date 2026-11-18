@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from app.schemas.shows import (
     ShowCreate,
     ShowPatch,
+    WatchCreate,
     check_dates,
     latest_allowed_date,
     normalize_title,
@@ -94,3 +95,14 @@ def test_patch_tells_absent_from_null() -> None:
 def test_patch_cannot_null_required_fields(field: str) -> None:
     with pytest.raises(ValidationError, match="can’t be empty"):
         ShowPatch.model_validate({field: None})
+
+
+def test_a_watch_follows_the_same_date_rules() -> None:
+    WatchCreate.model_validate({"startedOn": None, "finishedOn": "2024-05-01"})
+
+    with pytest.raises(ValidationError, match="on or before the finish date"):
+        WatchCreate.model_validate({"startedOn": "2024-05-02", "finishedOn": "2024-05-01"})
+    with pytest.raises(ValidationError, match="finish date can’t be in the future"):
+        WatchCreate.model_validate({"finishedOn": "2999-01-01"})
+    with pytest.raises(ValidationError):
+        WatchCreate.model_validate({"startedOn": None})

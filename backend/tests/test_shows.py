@@ -38,7 +38,16 @@ def test_create_returns_the_show_in_the_frontend_shape(client: TestClient) -> No
 
     show = create(client, startedOn="2024-04-01")
 
-    assert set(show) == {"id", "title", "genre", "status", "startedOn", "finishedOn"}
+    assert set(show) == {
+        "id",
+        "title",
+        "genre",
+        "status",
+        "startedOn",
+        "finishedOn",
+        "watchCount",
+    }
+    assert show["watchCount"] == 1
     assert show["title"] == "The Office"
     assert show["startedOn"] == "2024-04-01"
     assert show["finishedOn"] == "2024-05-01"

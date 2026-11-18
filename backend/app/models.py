@@ -86,9 +86,36 @@ class Show(Base):
     title: Mapped[str] = mapped_column(String(120))
     genre: Mapped[str] = mapped_column(String(20))
     status: Mapped[str] = mapped_column(String(20))
+    # The two dates mirror the latest watch, so listing and ordering need no join.
     started_on: Mapped[date | None] = mapped_column(Date, default=None)
     finished_on: Mapped[date] = mapped_column(Date)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
 
     user: Mapped[User] = relationship(back_populates="shows")
+    watches: Mapped[list["Watch"]] = relationship(
+        back_populates="show", cascade="all, delete-orphan", passive_deletes=True, lazy="selectin"
+    )
+
+    @property
+    def watch_count(self) -> int:
+        return len(self.watches)
+
+
+class Watch(Base):
+    """One time through a show. A show always has at least one."""
+
+    __tablename__ = "watches"
+    __table_args__ = (
+        CheckConstraint(
+            "started_on IS NULL OR started_on <= finished_on", name="ck_watches_dates_ordered"
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    show_id: Mapped[str] = mapped_column(ForeignKey("shows.id", ondelete="CASCADE"), index=True)
+    started_on: Mapped[date | None] = mapped_column(Date, default=None)
+    finished_on: Mapped[date] = mapped_column(Date)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+    show: Mapped[Show] = relationship(back_populates="watches")

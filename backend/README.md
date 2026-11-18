@@ -53,6 +53,9 @@ All paths start with `/api`. JSON uses camelCase keys and `YYYY-MM-DD` dates. Er
 | `POST` | `/shows` | 201 |
 | `PATCH` | `/shows/{id}` | Partial update. `startedOn: null` clears the start date |
 | `DELETE` | `/shows/{id}` | 204, also when it is already gone |
+| `GET` | `/shows/{id}/watches` | Every watch of the series, most recent first |
+| `POST` | `/shows/{id}/watches` | 201. Logs another watch and returns the updated series |
+| `DELETE` | `/shows/{id}/watches/{watchId}` | Returns the updated series. 409 for the last remaining watch |
 
 ## Design notes
 
@@ -64,8 +67,11 @@ All paths start with `/api`. JSON uses camelCase keys and `YYYY-MM-DD` dates. Er
 - **No CORS.** In development the Vite proxy makes `/api` same-origin. A separate production origin would need CORS with credentials.
 - **CSRF.** Cookies are `SameSite=Lax` and every write is a non-GET JSON request, which covers the usual cross-site attacks. Revisit this if the API ever serves another origin.
 
+## Watches
+
+Each time you watch a series is a row in `watches`. A series always has at least one: creating it records the first. The series' own `startedOn` and `finishedOn` mirror its latest watch (the one finished last), which keeps listing and the rotation order simple. Adding or deleting a watch refreshes that mirror, and `PATCH /shows/{id}` with new dates corrects the latest watch.
+
 ## Known gaps
 
-- No migrations yet: `create_all` only creates missing tables. Add Alembic before the first schema change.
+- No migrations yet: `create_all` only creates missing tables. Add Alembic before real data matters. If you created `rerun.db` before watches existed, delete it once so every series starts with a watch.
 - No rate limiting on login and register.
-- No history of past watches: a show keeps only its latest dates.
