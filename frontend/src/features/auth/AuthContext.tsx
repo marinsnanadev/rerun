@@ -8,11 +8,12 @@ import {
   type ReactNode,
 } from 'react';
 
-import { api, type Credentials, type User } from '../../api';
+import { api, onSessionExpired, type Credentials, type User } from '../../api';
 
 type AuthState =
   | { status: 'loading' }
-  | { status: 'anonymous' }
+  /** `expired` is set when a sign-in was lost while the app was open. */
+  | { status: 'anonymous'; expired?: boolean }
   | { status: 'authenticated'; user: User };
 
 interface AuthContextValue {
@@ -26,6 +27,17 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: 'loading' });
+
+  // When the server stops recognizing the session, send the person back to the sign-in screen.
+  useEffect(
+    () =>
+      onSessionExpired(() =>
+        setState((current) =>
+          current.status === 'authenticated' ? { status: 'anonymous', expired: true } : current,
+        ),
+      ),
+    [],
+  );
 
   // Restore the session, if there is one, when the app opens.
   useEffect(() => {

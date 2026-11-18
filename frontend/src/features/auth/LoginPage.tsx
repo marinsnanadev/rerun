@@ -125,10 +125,17 @@ export function LoginPage() {
             )}
           </Field>
 
-          {error && (
+          {error ? (
             <p className={styles.alert} role="alert">
               {error}
             </p>
+          ) : (
+            state.status === 'anonymous' &&
+            state.expired && (
+              <p className={styles.alert} role="status">
+                Your session expired. Sign in again to continue.
+              </p>
+            )
           )}
 
           <Button type="submit" busy={pending}>
