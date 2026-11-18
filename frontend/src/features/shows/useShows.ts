@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { api, errorMessage, type ShowPatch } from '../../api';
-import type { Show, ShowInput } from '../../domain/show';
+import type { Show, ShowInput, WatchInput } from '../../domain/show';
 
 type LoadStatus = 'loading' | 'ready' | 'error';
 
@@ -52,5 +52,23 @@ export function useShows() {
     setShows((current) => current.filter((show) => show.id !== id));
   }, []);
 
-  return { shows, status, error, retry, add, update, remove };
+  const replace = useCallback((updated: Show) => {
+    setShows((current) => current.map((show) => (show.id === updated.id ? updated : show)));
+  }, []);
+
+  const addWatch = useCallback(
+    async (id: string, input: WatchInput) => {
+      replace(await api.watches.add(id, input));
+    },
+    [replace],
+  );
+
+  const removeWatch = useCallback(
+    async (id: string, watchId: string) => {
+      replace(await api.watches.remove(id, watchId));
+    },
+    [replace],
+  );
+
+  return { shows, status, error, retry, add, update, remove, addWatch, removeWatch };
 }

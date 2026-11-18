@@ -16,7 +16,7 @@ import { useToday } from './useToday';
 
 export function DashboardPage() {
   const today = useToday();
-  const { shows, status, error, retry, add, update, remove } = useShows();
+  const { shows, status, error, retry, add, update, remove, addWatch } = useShows();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export function DashboardPage() {
   }
 
   const logFinished = (show: Show, date: ISODate) =>
-    run(() => update(show.id, { finishedOn: date, startedOn: null }));
+    run(() => addWatch(show.id, { startedOn: null, finishedOn: date }));
 
   const changeStatus = (show: Show, next: ShowStatus) =>
     run(() => update(show.id, { status: next }));

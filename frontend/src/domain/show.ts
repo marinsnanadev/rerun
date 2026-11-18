@@ -63,9 +63,20 @@ export interface Show {
   /** When the latest watch ended. Drives the rotation order. */
   finishedOn: ISODate;
   status: ShowStatus;
+  /** How many times the series has been watched. Always at least 1. */
+  watchCount: number;
 }
 
-export type ShowInput = Omit<Show, 'id'>;
+export type ShowInput = Omit<Show, 'id' | 'watchCount'>;
+
+/** One time through a series. */
+export interface Watch {
+  id: string;
+  startedOn: ISODate | null;
+  finishedOn: ISODate;
+}
+
+export type WatchInput = Omit<Watch, 'id'>;
 
 export function isStatus(value: string): value is ShowStatus {
   return (STATUSES as readonly string[]).includes(value);

@@ -72,5 +72,15 @@ export function createHttpClient(): ApiClient {
         request(`/shows/${encodeURIComponent(id)}`, { method: 'PATCH', json: patch }),
       remove: (id) => request(`/shows/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     },
+    watches: {
+      list: (showId) => request(`/shows/${encodeURIComponent(showId)}/watches`),
+      add: (showId, input) =>
+        request(`/shows/${encodeURIComponent(showId)}/watches`, { method: 'POST', json: input }),
+      remove: (showId, watchId) =>
+        request(
+          `/shows/${encodeURIComponent(showId)}/watches/${encodeURIComponent(watchId)}`,
+          { method: 'DELETE' },
+        ),
+    },
   };
 }

@@ -8,6 +8,7 @@ function show(overrides: Partial<Show> & Pick<Show, 'id' | 'title' | 'finishedOn
     genre: 'comedy',
     startedOn: null,
     status: 'looping',
+    watchCount: 1,
     ...overrides,
   };
 }

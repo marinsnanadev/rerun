@@ -1,4 +1,4 @@
-import type { Show, ShowInput } from '../domain/show';
+import type { Show, ShowInput, Watch, WatchInput } from '../domain/show';
 
 export interface User {
   id: string;
@@ -30,5 +30,13 @@ export interface ApiClient {
     create(input: ShowInput): Promise<Show>;
     update(id: string, patch: ShowPatch): Promise<Show>;
     remove(id: string): Promise<void>;
+  };
+  watches: {
+    /** Every time through a series, most recent first. */
+    list(showId: string): Promise<Watch[]>;
+    /** Logs another watch. Resolves to the series with its refreshed dates. */
+    add(showId: string, input: WatchInput): Promise<Show>;
+    /** Removes a watch. Resolves to the series with its refreshed dates. */
+    remove(showId: string, watchId: string): Promise<Show>;
   };
 }
