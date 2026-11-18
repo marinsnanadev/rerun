@@ -8,7 +8,7 @@ from app import models  # noqa: F401  (registers the tables on Base.metadata)
 from app.config import Settings, get_settings
 from app.db import Base, make_engine
 from app.errors import register_error_handlers
-from app.routers import auth
+from app.routers import auth, shows
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -40,6 +40,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok"}
 
     api.include_router(auth.router)
+    api.include_router(shows.router)
 
     app.include_router(api)
     register_error_handlers(app)
