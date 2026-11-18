@@ -20,10 +20,10 @@ Add the series you keep coming back to, log when you finished each one, and Reru
 
 ## How the rotation works
 
-1. Add a series with its title, genre, the date you finished watching it and, optionally, the date you started.
+1. Add a series with its title and genre. Add the watch dates if it is already finished, or choose **Currently watching** without entering a finish date.
 2. Choose **Add to looping** to put it in your rotation.
 3. Rerun orders the rotation by last finished date, oldest first. The series at the top is what to watch next.
-4. When you finish a series, log it with **Finished it**. It moves to the back of the line.
+4. Mark a series **Currently watching** in the library while it is in progress. When you finish it, choose **Finished it** and confirm the date; choose a library list if it was currently watching. A looping series moves to the back of the line.
 
 For example, if you finished Community on Sep 19, Modern Family on Aug 15 and The Office on Jul 10, The Office is up next because it has gone the longest without a rewatch.
 
@@ -100,6 +100,7 @@ uvicorn app.main:app --reload
 Success looks like `Uvicorn running on http://127.0.0.1:8000`. Check it at **http://localhost:8000/api/health**, which should answer `{"status":"ok"}`. Interactive API docs are at http://localhost:8000/api/docs.
 
 Leave this terminal running. The database file `backend/rerun.db` is created on first start.
+If you already have a database, the API preserves its data and upgrades the show date column automatically.
 
 Run `uvicorn` from inside the `backend` folder, because the settings file `.env` is read from the current folder.
 

@@ -28,6 +28,7 @@ export const EMPTY_DRAFT: ShowDraft = {
 
 export function validateShowDraft(draft: ShowDraft, today: ISODate): ShowDraftResult {
   const errors: ShowDraftErrors = {};
+  const currentlyWatching = draft.status === 'currently_watching';
 
   const title = draft.title.trim().replace(/\s+/g, ' ');
   if (title.length === 0) {
@@ -41,25 +42,27 @@ export function validateShowDraft(draft: ShowDraft, today: ISODate): ShowDraftRe
   }
 
   const hasFinished = draft.finishedOn !== '';
-  if (!hasFinished) {
-    errors.finishedOn = 'Choose the date you finished watching.';
-  } else if (!isISODate(draft.finishedOn)) {
-    errors.finishedOn = 'Enter a valid date.';
-  } else if (draft.finishedOn > today) {
-    errors.finishedOn = 'The finish date can’t be in the future.';
-  }
+  if (!currentlyWatching) {
+    if (!hasFinished) {
+      errors.finishedOn = 'Choose the date you finished watching.';
+    } else if (!isISODate(draft.finishedOn)) {
+      errors.finishedOn = 'Enter a valid date.';
+    } else if (draft.finishedOn > today) {
+      errors.finishedOn = 'The finish date can’t be in the future.';
+    }
 
-  if (draft.startedOn !== '') {
-    if (!isISODate(draft.startedOn)) {
-      errors.startedOn = 'Enter a valid date.';
-    } else if (draft.startedOn > today) {
-      errors.startedOn = 'The start date can’t be in the future.';
-    } else if (
-      hasFinished &&
-      isISODate(draft.finishedOn) &&
-      draft.startedOn > draft.finishedOn
-    ) {
-      errors.startedOn = 'The start date must be on or before the finish date.';
+    if (draft.startedOn !== '') {
+      if (!isISODate(draft.startedOn)) {
+        errors.startedOn = 'Enter a valid date.';
+      } else if (draft.startedOn > today) {
+        errors.startedOn = 'The start date can’t be in the future.';
+      } else if (
+        hasFinished &&
+        isISODate(draft.finishedOn) &&
+        draft.startedOn > draft.finishedOn
+      ) {
+        errors.startedOn = 'The start date must be on or before the finish date.';
+      }
     }
   }
 
@@ -76,8 +79,8 @@ export function validateShowDraft(draft: ShowDraft, today: ISODate): ShowDraftRe
     value: {
       title,
       genre: draft.genre,
-      finishedOn: draft.finishedOn,
-      startedOn: draft.startedOn === '' ? null : draft.startedOn,
+      finishedOn: currentlyWatching ? null : draft.finishedOn,
+      startedOn: currentlyWatching || draft.startedOn === '' ? null : draft.startedOn,
       status: draft.status,
     },
   };

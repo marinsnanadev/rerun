@@ -118,7 +118,13 @@ function History({ headingId, show, today, onClose, onAddWatch, onRemoveWatch }:
         <h2 id={headingId} className={styles.heading}>
           {show.title}
         </h2>
-        <p className={styles.subtitle}>{count === 1 ? 'Watched once' : `Watched ${count} times`}</p>
+        <p className={styles.subtitle}>
+          {count === 0
+            ? 'No completed watches yet'
+            : count === 1
+              ? 'Watched once'
+              : `Watched ${count} times`}
+        </p>
       </div>
 
       {loaded.status === 'loading' && (
@@ -134,45 +140,49 @@ function History({ headingId, show, today, onClose, onAddWatch, onRemoveWatch }:
       )}
 
       {loaded.status === 'ready' && (
-        <ol className={styles.list}>
-          {watches.map((watch, index) => (
-            <li key={watch.id} className={styles.item}>
-              <div className={styles.when}>
-                <span>{describeWatch(watch)}</span>
-                {index === 0 && <span className={styles.badge}>Latest</span>}
-              </div>
+        watches.length === 0 ? (
+          <p className={styles.note}>No completed watches have been logged.</p>
+        ) : (
+          <ol className={styles.list}>
+            {watches.map((watch, index) => (
+              <li key={watch.id} className={styles.item}>
+                <div className={styles.when}>
+                  <span>{describeWatch(watch)}</span>
+                  {index === 0 && <span className={styles.badge}>Latest</span>}
+                </div>
 
-              {watches.length > 1 &&
-                (confirmingId === watch.id ? (
-                  <div className={styles.actions}>
+                {watches.length > 1 &&
+                  (confirmingId === watch.id ? (
+                    <div className={styles.actions}>
+                      <Button
+                        variant="ghost"
+                        className={styles.danger}
+                        busy={busyId === watch.id}
+                        onClick={() => void handleRemove(watch)}
+                      >
+                        Confirm remove
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        disabled={busyId === watch.id}
+                        onClick={() => setConfirmingId(null)}
+                      >
+                        Keep
+                      </Button>
+                    </div>
+                  ) : (
                     <Button
                       variant="ghost"
-                      className={styles.danger}
-                      busy={busyId === watch.id}
-                      onClick={() => void handleRemove(watch)}
+                      aria-label={`Remove the watch from ${describeWatch(watch)}`}
+                      onClick={() => setConfirmingId(watch.id)}
                     >
-                      Confirm remove
+                      Remove
                     </Button>
-                    <Button
-                      variant="ghost"
-                      disabled={busyId === watch.id}
-                      onClick={() => setConfirmingId(null)}
-                    >
-                      Keep
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    aria-label={`Remove the watch from ${describeWatch(watch)}`}
-                    onClick={() => setConfirmingId(watch.id)}
-                  >
-                    Remove
-                  </Button>
-                ))}
-            </li>
-          ))}
-        </ol>
+                  ))}
+              </li>
+            ))}
+          </ol>
+        )
       )}
 
       {actionError && (

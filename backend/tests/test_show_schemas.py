@@ -29,6 +29,15 @@ def test_create_accepts_the_frontend_payload() -> None:
     assert show.started_on is None
 
 
+def test_create_accepts_currently_watching_status() -> None:
+    show = ShowCreate.model_validate(
+        {**VALID, "status": "currently_watching", "startedOn": None, "finishedOn": None}
+    )
+
+    assert show.status == "currently_watching"
+    assert show.finished_on is None
+
+
 def test_title_is_trimmed_and_collapsed() -> None:
     assert normalize_title("  Modern \t  Family\n") == "Modern Family"
 
@@ -41,7 +50,12 @@ def test_bad_titles_are_rejected(title: str) -> None:
 
 @pytest.mark.parametrize(
     ("field", "value"),
-    [("genre", "western"), ("status", "watching"), ("finishedOn", "2024-02-31"), ("finishedOn", "")],
+    [
+        ("genre", "western"),
+        ("status", "watching"),
+        ("finishedOn", "2024-02-31"),
+        ("finishedOn", ""),
+    ],
 )
 def test_bad_values_are_rejected(field: str, value: str) -> None:
     with pytest.raises(ValidationError):
@@ -91,7 +105,7 @@ def test_patch_tells_absent_from_null() -> None:
     assert untouched.model_dump(exclude_unset=True) == {"status": "pondering"}
 
 
-@pytest.mark.parametrize("field", ["title", "genre", "status", "finishedOn"])
+@pytest.mark.parametrize("field", ["title", "genre", "status"])
 def test_patch_cannot_null_required_fields(field: str) -> None:
     with pytest.raises(ValidationError, match="can’t be empty"):
         ShowPatch.model_validate({field: None})

@@ -20,6 +20,7 @@ export function RotationPreview() {
       title,
       genre: 'comedy',
       status: 'looping',
+      watchCount: 1,
       startedOn: null,
       finishedOn: addDays(today, -daysAgo),
     }));

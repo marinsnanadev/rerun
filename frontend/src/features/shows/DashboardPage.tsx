@@ -4,9 +4,10 @@ import { errorMessage } from '../../api';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { buildQueue, getUpNext } from '../../domain/looping';
-import type { Show, ShowInput, ShowStatus } from '../../domain/show';
+import type { FinishedShowStatus, Show, ShowInput, ShowStatus } from '../../domain/show';
 import type { ISODate } from '../../lib/dates';
 import styles from './DashboardPage.module.css';
+import { FinishShowDialog } from './FinishShowDialog';
 import { HistoryDialog } from './HistoryDialog';
 import { Library } from './Library';
 import { QueueList } from './QueueList';
@@ -24,11 +25,13 @@ export function DashboardPage() {
 
   const [form, setForm] = useState<FormTarget | null>(null);
   const [historyId, setHistoryId] = useState<string | null>(null);
+  const [finishId, setFinishId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const queue = useMemo(() => buildQueue(shows, today), [shows, today]);
   const upNext = getUpNext(queue);
   const historyShow = shows.find((show) => show.id === historyId) ?? null;
+  const finishShow = shows.find((show) => show.id === finishId) ?? null;
 
   /** Runs a change, shows any error, and reports whether it worked. */
   async function run(action: () => Promise<unknown>): Promise<boolean> {
@@ -42,18 +45,55 @@ export function DashboardPage() {
     }
   }
 
-  const logFinished = (show: Show, date: ISODate) =>
-    run(() => addWatch(show.id, { startedOn: null, finishedOn: date }));
+  async function logFinished(
+    show: Show,
+    date: ISODate,
+    nextStatus?: FinishedShowStatus,
+  ): Promise<void> {
+    if (show.status === 'currently_watching') {
+      if (!nextStatus) throw new Error('Choose a list for this series.');
+      if (show.watchCount === 0) {
+        await update(show.id, {
+          status: nextStatus,
+          startedOn: null,
+          finishedOn: date,
+        });
+        return;
+      }
+      await update(show.id, { status: nextStatus });
+    }
+    await addWatch(show.id, { startedOn: null, finishedOn: date });
+  }
 
-  const changeStatus = (show: Show, next: ShowStatus) =>
-    run(() => update(show.id, { status: next }));
+  const changeStatus = (show: Show, next: ShowStatus) => {
+    if (show.status === 'currently_watching' && next !== 'currently_watching') {
+      setFinishId(show.id);
+      return Promise.resolve();
+    }
+
+    return run(() =>
+      update(
+        show.id,
+        next === 'currently_watching' ? { status: next, startedOn: null } : { status: next },
+      ),
+    );
+  };
 
   const removeShow = (show: Show) => run(() => remove(show.id));
 
   /** Saves the series form, whether it adds a series or edits one. */
   async function submitForm(input: ShowInput): Promise<void> {
     if (form?.kind === 'edit') {
-      await update(form.show.id, input);
+      if (input.status === 'currently_watching') {
+        await update(form.show.id, {
+          title: input.title,
+          genre: input.genre,
+          status: input.status,
+          startedOn: null,
+        });
+      } else {
+        await update(form.show.id, input);
+      }
     } else {
       await add(input);
     }
@@ -101,8 +141,7 @@ export function DashboardPage() {
                 <UpNextCard
                   key={upNext.show.id}
                   entry={upNext}
-                  today={today}
-                  onFinished={(date) => logFinished(upNext.show, date)}
+                  onFinished={() => setFinishId(upNext.show.id)}
                 />
               </section>
               <QueueList entries={queue.slice(1)} />
@@ -122,6 +161,7 @@ export function DashboardPage() {
           onStatusChange={changeStatus}
           onEdit={(show) => setForm({ kind: 'edit', show })}
           onHistory={(show) => setHistoryId(show.id)}
+          onFinish={(show) => setFinishId(show.id)}
           onRemove={removeShow}
         />
       </div>
@@ -160,6 +200,13 @@ export function DashboardPage() {
         onClose={() => setHistoryId(null)}
         onAddWatch={addWatch}
         onRemoveWatch={removeWatch}
+      />
+
+      <FinishShowDialog
+        show={finishShow}
+        today={today}
+        onClose={() => setFinishId(null)}
+        onFinish={logFinished}
       />
     </>
   );

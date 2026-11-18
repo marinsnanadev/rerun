@@ -75,7 +75,8 @@ class Show(Base):
     __tablename__ = "shows"
     __table_args__ = (
         CheckConstraint(
-            "started_on IS NULL OR started_on <= finished_on", name="ck_shows_dates_ordered"
+            "finished_on IS NULL OR started_on IS NULL OR started_on <= finished_on",
+            name="ck_shows_dates_ordered",
         ),
     )
 
@@ -86,9 +87,9 @@ class Show(Base):
     title: Mapped[str] = mapped_column(String(120))
     genre: Mapped[str] = mapped_column(String(20))
     status: Mapped[str] = mapped_column(String(20))
-    # The two dates mirror the latest watch, so listing and ordering need no join.
+    # The dates mirror the latest completed watch, or the active watch when there is no history.
     started_on: Mapped[date | None] = mapped_column(Date, default=None)
-    finished_on: Mapped[date] = mapped_column(Date)
+    finished_on: Mapped[date | None] = mapped_column(Date, default=None)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
 
@@ -103,7 +104,7 @@ class Show(Base):
 
 
 class Watch(Base):
-    """One time through a show. A show always has at least one."""
+    """One completed time through a show."""
 
     __tablename__ = "watches"
     __table_args__ = (

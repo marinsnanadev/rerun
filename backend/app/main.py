@@ -8,6 +8,7 @@ from app import models  # noqa: F401  (registers the tables on Base.metadata)
 from app.config import Settings, get_settings
 from app.db import Base, make_engine
 from app.errors import register_error_handlers
+from app.migrations import migrate_finished_on_nullable
 from app.routers import auth, shows
 
 
@@ -17,7 +18,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-        # Good enough until the schema needs migrations (see the README).
+        migrate_finished_on_nullable(engine)
         Base.metadata.create_all(engine)
         yield
         engine.dispose()

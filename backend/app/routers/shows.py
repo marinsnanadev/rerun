@@ -10,6 +10,7 @@ from app.schemas.shows import (
     ShowCreate,
     ShowOut,
     ShowPatch,
+    ShowStatus,
     WatchCreate,
     WatchOut,
     check_dates,
@@ -39,7 +40,11 @@ def _newest_first_key(watch: Watch) -> tuple[date, datetime]:
 
 
 def _sync_latest(show: Show) -> None:
-    """Point the show's own dates at its latest watch: the one finished last."""
+    """Point the show's dates at its latest completed watch, when it has one."""
+    if not show.watches:
+        show.started_on = None
+        show.finished_on = None
+        return
     latest = max(show.watches, key=_newest_first_key)
     show.started_on = latest.started_on
     show.finished_on = latest.finished_on
@@ -50,7 +55,7 @@ def list_shows(user: CurrentUser, db: DbSession) -> list[Show]:
     query = (
         select(Show)
         .where(Show.user_id == user.id)
-        .order_by(Show.finished_on, Show.created_at)
+        .order_by(Show.finished_on.nulls_last(), Show.created_at)
     )
     return list(db.scalars(query))
 
@@ -64,7 +69,11 @@ def create_show(payload: ShowCreate, user: CurrentUser, db: DbSession) -> Show:
         status=payload.status.value,
         started_on=payload.started_on,
         finished_on=payload.finished_on,
-        watches=[_new_watch(payload.started_on, payload.finished_on)],
+        watches=(
+            [_new_watch(payload.started_on, payload.finished_on)]
+            if payload.finished_on is not None
+            else []
+        ),
     )
     db.add(show)
     db.commit()
@@ -76,19 +85,47 @@ def update_show(show_id: str, payload: ShowPatch, user: CurrentUser, db: DbSessi
     """Edit a show. Changing its dates corrects the latest watch; older watches stay as they are."""
     show = _get_owned_show(db, user, show_id)
     changes = payload.model_dump(exclude_unset=True)
+    status = changes.get("status", show.status)
+    started_on = changes.get("started_on", show.started_on)
+    finished_on = changes.get("finished_on", show.finished_on)
 
-    if any(field in changes for field in _DATE_FIELDS):
-        started_on = changes.get("started_on", show.started_on)
-        finished_on = changes.get("finished_on", show.finished_on)
+    if finished_on is None and status != ShowStatus.CURRENTLY_WATCHING:
+        raise HTTPException(status_code=422, detail="Choose the date you finished watching.")
+
+    if (
+        status == ShowStatus.CURRENTLY_WATCHING
+        and "started_on" in changes
+        and "finished_on" not in changes
+    ):
+        if "started_on" in changes:
+            try:
+                check_dates(started_on, None)
+            except ValueError as error:
+                raise HTTPException(status_code=422, detail=str(error)) from None
+            show.started_on = started_on
+    elif any(field in changes for field in _DATE_FIELDS):
         try:
             check_dates(started_on, finished_on)
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error)) from None
 
-        latest = max(show.watches, key=_newest_first_key)
-        latest.started_on = started_on
-        latest.finished_on = finished_on
-        _sync_latest(show)
+        if show.watches:
+            if finished_on is None:
+                raise HTTPException(
+                    status_code=422,
+                    detail="A finish date can’t be cleared while watch history exists.",
+                )
+            latest = max(show.watches, key=_newest_first_key)
+            latest.started_on = started_on
+            latest.finished_on = finished_on
+            _sync_latest(show)
+        elif finished_on is not None:
+            show.started_on = started_on
+            show.finished_on = finished_on
+            show.watches.append(_new_watch(started_on, finished_on))
+        else:
+            show.started_on = started_on
+            show.finished_on = None
 
     for field, value in changes.items():
         if field not in _DATE_FIELDS:

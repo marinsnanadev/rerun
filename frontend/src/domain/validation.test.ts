@@ -71,6 +71,24 @@ describe('validateShowDraft', () => {
     expect(validateShowDraft({ ...VALID, finishedOn: TODAY }, TODAY).ok).toBe(true);
   });
 
+  it('accepts a series that is currently being watched', () => {
+    const result = validateShowDraft(
+      { ...VALID, finishedOn: '', startedOn: '', status: 'currently_watching' },
+      TODAY,
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        title: 'The Office',
+        genre: 'comedy',
+        finishedOn: null,
+        startedOn: null,
+        status: 'currently_watching',
+      },
+    });
+  });
+
   it('rejects a start date after the finish date', () => {
     const result = validateShowDraft({ ...VALID, startedOn: '2026-08-01' }, TODAY);
 

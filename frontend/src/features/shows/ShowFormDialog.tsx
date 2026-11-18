@@ -51,7 +51,7 @@ function draftFrom(show: Show): ShowDraft {
   return {
     title: show.title,
     genre: show.genre,
-    finishedOn: show.finishedOn,
+    finishedOn: show.finishedOn ?? '',
     startedOn: show.startedOn ?? '',
     status: show.status,
   };
@@ -138,33 +138,35 @@ function ShowForm({ headingId, today, show, onClose, onSubmit }: ShowFormProps) 
         )}
       </Field>
 
-      <div className={styles.dates}>
-        <Field label="Finished watching" error={errors.finishedOn}>
-          {(control) => (
-            <input
-              {...control}
-              className={controlClassName}
-              type="date"
-              max={today}
-              value={draft.finishedOn}
-              onChange={(event) => change('finishedOn', event.target.value)}
-            />
-          )}
-        </Field>
+      {draft.status !== 'currently_watching' && (
+        <div className={styles.dates}>
+          <Field label="Finished watching" error={errors.finishedOn}>
+            {(control) => (
+              <input
+                {...control}
+                className={controlClassName}
+                type="date"
+                max={today}
+                value={draft.finishedOn}
+                onChange={(event) => change('finishedOn', event.target.value)}
+              />
+            )}
+          </Field>
 
-        <Field label="Started watching" optional error={errors.startedOn}>
-          {(control) => (
-            <input
-              {...control}
-              className={controlClassName}
-              type="date"
-              max={today}
-              value={draft.startedOn}
-              onChange={(event) => change('startedOn', event.target.value)}
-            />
-          )}
-        </Field>
-      </div>
+          <Field label="Started watching" optional error={errors.startedOn}>
+            {(control) => (
+              <input
+                {...control}
+                className={controlClassName}
+                type="date"
+                max={today}
+                value={draft.startedOn}
+                onChange={(event) => change('startedOn', event.target.value)}
+              />
+            )}
+          </Field>
+        </div>
+      )}
 
       {show && show.watchCount > 1 && (
         <p className={styles.hint}>

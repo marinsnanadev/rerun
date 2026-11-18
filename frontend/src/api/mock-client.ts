@@ -90,7 +90,12 @@ function readWatches(): WatchesByShow {
 
 /** Shows saved before watches existed have none stored, so their dates stand in for one. */
 function watchesOf(show: StoredShow, all: WatchesByShow): Watch[] {
-  return all[show.id] ?? [{ id: show.id, startedOn: show.startedOn, finishedOn: show.finishedOn }];
+  return (
+    all[show.id] ??
+    (show.finishedOn
+      ? [{ id: show.id, startedOn: show.startedOn, finishedOn: show.finishedOn }]
+      : [])
+  );
 }
 
 /** The watch finished last. When two share a day, the one added later wins. */
@@ -100,6 +105,7 @@ function latestOf(watches: readonly Watch[]): Watch {
 
 /** A show's own dates always mirror its latest watch. */
 function withLatestDates(show: StoredShow, watches: readonly Watch[]): StoredShow {
+  if (watches.length === 0) return { ...show, startedOn: null, finishedOn: null };
   const latest = latestOf(watches);
   return { ...show, startedOn: latest.startedOn, finishedOn: latest.finishedOn };
 }
@@ -214,15 +220,19 @@ export function createMockClient(): ApiClient {
         await wait();
         const { id: userId } = currentUser();
         const show: StoredShow = { id: crypto.randomUUID(), ...input };
-        const first: Watch = {
-          id: crypto.randomUUID(),
-          startedOn: input.startedOn,
-          finishedOn: input.finishedOn,
-        };
+        const watches: Watch[] = input.finishedOn
+          ? [
+              {
+                id: crypto.randomUUID(),
+                startedOn: input.startedOn,
+                finishedOn: input.finishedOn,
+              },
+            ]
+          : [];
 
         writeShows(userId, [...readShows(userId), show]);
-        write(WATCHES_KEY, { ...readWatches(), [show.id]: [first] });
-        return present(show, [first]);
+        write(WATCHES_KEY, { ...readWatches(), [show.id]: watches });
+        return present(show, watches);
       },
 
       async update(id: string, patch: ShowPatch) {
@@ -230,12 +240,44 @@ export function createMockClient(): ApiClient {
         const { userId, shows, show, allWatches, watches } = loadShow(id);
         const changed: StoredShow = { ...show, ...patch };
 
-        // Editing the dates corrects the latest watch, as the backend does.
+        if (
+          changed.status === 'currently_watching' &&
+          'startedOn' in patch &&
+          !('finishedOn' in patch)
+        ) {
+          writeShows(
+            userId,
+            shows.map((candidate) => (candidate.id === id ? changed : candidate)),
+          );
+          return present(changed, watches);
+        }
+
+        // Editing dates corrects the latest watch, or records the first one.
         if ('startedOn' in patch || 'finishedOn' in patch) {
+          if (watches.length === 0) {
+            const finishedOn = changed.finishedOn;
+            if (finishedOn === null) {
+              writeShows(
+                userId,
+                shows.map((candidate) => (candidate.id === id ? changed : candidate)),
+              );
+              return present(changed, watches);
+            }
+            const first: Watch = {
+              id: crypto.randomUUID(),
+              startedOn: changed.startedOn,
+              finishedOn,
+            };
+            return saveWatches(userId, shows, changed, allWatches, [first]);
+          }
+          const finishedOn = changed.finishedOn;
+          if (finishedOn === null) {
+            throw new ApiError(422, 'A finish date can’t be cleared while watch history exists.');
+          }
           const latest = latestOf(watches);
           const corrected = watches.map((watch) =>
             watch === latest
-              ? { ...watch, startedOn: changed.startedOn, finishedOn: changed.finishedOn }
+              ? { ...watch, startedOn: changed.startedOn, finishedOn }
               : watch,
           );
           return saveWatches(userId, shows, changed, allWatches, corrected);

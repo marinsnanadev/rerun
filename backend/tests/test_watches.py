@@ -174,6 +174,22 @@ def test_editing_other_fields_does_not_touch_watches(client: TestClient) -> None
     assert response.json()["finishedOn"] == "2024-05-01"
 
 
+def test_marking_a_show_current_does_not_rewrite_its_watch_history(client: TestClient) -> None:
+    sign_in(client)
+    show = create(client)
+
+    response = client.patch(
+        f"/api/shows/{show['id']}", json={"status": "currently_watching", "startedOn": None}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["finishedOn"] == "2024-05-01"
+    assert response.json()["startedOn"] is None
+    [watch] = watches(client, show["id"])
+    assert watch["startedOn"] == "2024-04-01"
+    assert watch["finishedOn"] == "2024-05-01"
+
+
 def test_watches_belong_to_their_owner(client: TestClient) -> None:
     sign_in(client, "ana")
     show = create(client)

@@ -27,6 +27,7 @@ class Genre(StrEnum):
 
 
 class ShowStatus(StrEnum):
+    CURRENTLY_WATCHING = "currently_watching"
     LOOPING = "looping"
     REWATCH = "rewatch"
     ONE_TIME = "one_time"
@@ -52,16 +53,18 @@ def normalize_title(value: str) -> str:
     return title
 
 
-def check_dates(started_on: date | None, finished_on: date, *, latest: date | None = None) -> None:
+def check_dates(
+    started_on: date | None, finished_on: date | None, *, latest: date | None = None
+) -> None:
     """The date rules shared by creating a show and editing one. Raises ValueError."""
     ceiling = latest if latest is not None else latest_allowed_date()
 
-    if finished_on > ceiling:
+    if finished_on is not None and finished_on > ceiling:
         raise ValueError("The finish date can’t be in the future.")
     if started_on is not None:
         if started_on > ceiling:
             raise ValueError("The start date can’t be in the future.")
-        if started_on > finished_on:
+        if finished_on is not None and started_on > finished_on:
             raise ValueError("The start date must be on or before the finish date.")
 
 
@@ -72,7 +75,7 @@ class ShowCreate(ApiModel):
     genre: Genre
     status: ShowStatus
     started_on: date | None = None
-    finished_on: date
+    finished_on: date | None = None
 
     @field_validator("title")
     @classmethod
@@ -81,6 +84,8 @@ class ShowCreate(ApiModel):
 
     @model_validator(mode="after")
     def _valid_dates(self) -> Self:
+        if self.finished_on is None and self.status != ShowStatus.CURRENTLY_WATCHING:
+            raise ValueError("Choose the date you finished watching.")
         check_dates(self.started_on, self.finished_on)
         return self
 
@@ -89,7 +94,6 @@ _REQUIRED_FIELDS = {
     "title": "Title",
     "genre": "Genre",
     "status": "Status",
-    "finished_on": "The finish date",
 }
 
 
@@ -144,7 +148,7 @@ class ShowOut(ApiModel):
     title: str
     genre: Genre
     status: ShowStatus
-    # Dates of the latest watch.
+    # Dates of the latest completed watch, or null until one exists.
     started_on: date | None
-    finished_on: date
+    finished_on: date | None
     watch_count: int

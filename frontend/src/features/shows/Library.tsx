@@ -19,16 +19,25 @@ interface LibraryProps {
   onStatusChange(show: Show, status: ShowStatus): Promise<unknown>;
   onEdit(show: Show): void;
   onHistory(show: Show): void;
+  onFinish(show: Show): void;
   onRemove(show: Show): Promise<unknown>;
 }
 
-export function Library({ shows, onStatusChange, onEdit, onHistory, onRemove }: LibraryProps) {
+export function Library({
+  shows,
+  onStatusChange,
+  onEdit,
+  onHistory,
+  onFinish,
+  onRemove,
+}: LibraryProps) {
   const headingId = useId();
   const [filter, setFilter] = useState<Filter>('all');
 
   const counts = useMemo(() => {
     const result: Record<Filter, number> = {
       all: shows.length,
+      currently_watching: 0,
       looping: 0,
       rewatch: 0,
       one_time: 0,
@@ -43,7 +52,10 @@ export function Library({ shows, onStatusChange, onEdit, onHistory, onRemove }: 
       shows
         .filter((show) => filter === 'all' || show.status === filter)
         .sort(
-          (a, b) => b.finishedOn.localeCompare(a.finishedOn) || a.title.localeCompare(b.title),
+          (a, b) =>
+            Number(b.status === 'currently_watching') - Number(a.status === 'currently_watching') ||
+            (b.finishedOn ?? '').localeCompare(a.finishedOn ?? '') ||
+            a.title.localeCompare(b.title),
         ),
     [shows, filter],
   );
@@ -84,6 +96,7 @@ export function Library({ shows, onStatusChange, onEdit, onHistory, onRemove }: 
               onStatusChange={onStatusChange}
               onEdit={onEdit}
               onHistory={onHistory}
+              onFinish={onFinish}
               onRemove={onRemove}
             />
           ))}
@@ -98,16 +111,29 @@ interface LibraryRowProps {
   onStatusChange: LibraryProps['onStatusChange'];
   onEdit: LibraryProps['onEdit'];
   onHistory: LibraryProps['onHistory'];
+  onFinish: LibraryProps['onFinish'];
   onRemove: LibraryProps['onRemove'];
 }
 
-function LibraryRow({ show, onStatusChange, onEdit, onHistory, onRemove }: LibraryRowProps) {
+function LibraryRow({
+  show,
+  onStatusChange,
+  onEdit,
+  onHistory,
+  onFinish,
+  onRemove,
+}: LibraryRowProps) {
   const selectId = useId();
   const [confirming, setConfirming] = useState(false);
 
-  const when = show.startedOn
-    ? `${formatDate(show.startedOn)} to ${formatDate(show.finishedOn)}`
-    : `Finished ${formatDate(show.finishedOn)}`;
+  const when =
+    show.status === 'currently_watching'
+      ? 'Currently watching'
+      : show.startedOn
+        ? `${formatDate(show.startedOn)} to ${show.finishedOn ? formatDate(show.finishedOn) : 'not finished'}`
+        : show.finishedOn
+          ? `Finished ${formatDate(show.finishedOn)}`
+          : 'Not finished yet';
 
   return (
     <li className={styles.row}>
@@ -149,6 +175,11 @@ function LibraryRow({ show, onStatusChange, onEdit, onHistory, onRemove }: Libra
         >
           History
         </Button>
+        {show.status === 'currently_watching' && (
+          <Button variant="secondary" onClick={() => onFinish(show)}>
+            Finished it
+          </Button>
+        )}
 
         {confirming ? (
           <>

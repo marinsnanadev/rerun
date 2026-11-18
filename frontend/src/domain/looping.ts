@@ -1,8 +1,10 @@
 import { daysBetween, type ISODate } from '../lib/dates';
 import type { Show } from './show';
 
+type CompletedShow = Show & { finishedOn: ISODate };
+
 export interface QueueEntry {
-  show: Show;
+  show: CompletedShow;
   /** Whole days since the show was last finished. Never negative. */
   daysSince: number;
   /** 1-based place in the rotation. 1 is what to watch next. */
@@ -16,7 +18,10 @@ export interface QueueEntry {
  */
 export function buildQueue(shows: readonly Show[], today: ISODate): QueueEntry[] {
   return shows
-    .filter((show) => show.status === 'looping')
+    .filter(
+      (show): show is CompletedShow =>
+        show.status === 'looping' && show.finishedOn !== null,
+    )
     .sort(
       (a, b) =>
         a.finishedOn.localeCompare(b.finishedOn) ||

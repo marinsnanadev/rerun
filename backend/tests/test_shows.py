@@ -54,6 +54,33 @@ def test_create_returns_the_show_in_the_frontend_shape(client: TestClient) -> No
     assert isinstance(show["id"], str)
 
 
+def test_currently_watching_can_be_created_without_a_finished_date(client: TestClient) -> None:
+    sign_in(client)
+
+    show = create(client, status="currently_watching", startedOn=None, finishedOn=None)
+
+    assert show["finishedOn"] is None
+    assert show["watchCount"] == 0
+
+
+def test_finishing_a_current_show_without_history_creates_its_first_watch(
+    client: TestClient,
+) -> None:
+    sign_in(client)
+    show = create(client, status="currently_watching", startedOn=None, finishedOn=None)
+
+    response = client.patch(
+        f"/api/shows/{show['id']}",
+        json={"status": "looping", "startedOn": None, "finishedOn": "2024-09-01"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["watchCount"] == 1
+    assert response.json()["finishedOn"] == "2024-09-01"
+    history = client.get(f"/api/shows/{show['id']}/watches").json()
+    assert [watch["finishedOn"] for watch in history] == ["2024-09-01"]
+
+
 def test_list_returns_only_my_shows_oldest_finish_first(client: TestClient) -> None:
     sign_in(client, "ana")
     create(client, title="Community", finishedOn="2024-09-19")
@@ -146,14 +173,14 @@ def test_patch_checks_dates_against_the_stored_ones(client: TestClient) -> None:
     assert client.get("/api/shows").json()[0]["finishedOn"] == "2024-05-01"
 
 
-def test_patch_cannot_blank_required_fields(client: TestClient) -> None:
+def test_completed_show_cannot_clear_its_finished_date(client: TestClient) -> None:
     sign_in(client)
     show = create(client)
 
     response = client.patch(f"/api/shows/{show['id']}", json={"finishedOn": None})
 
     assert response.status_code == 422
-    assert response.json() == {"detail": "The finish date can’t be empty."}
+    assert response.json() == {"detail": "Choose the date you finished watching."}
 
 
 def test_patch_of_a_missing_show_is_a_404(client: TestClient) -> None:
