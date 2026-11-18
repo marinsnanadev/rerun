@@ -3,10 +3,11 @@ import { useMemo, useState } from 'react';
 import { errorMessage } from '../../api';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
-import { buildQueue, getUpNext } from '../../domain/looping';
+import { buildQueue, getUpNext, moveDeferredToComingUp } from '../../domain/looping';
 import type { FinishedShowStatus, Show, ShowInput, ShowStatus } from '../../domain/show';
 import type { ISODate } from '../../lib/dates';
 import styles from './DashboardPage.module.css';
+import { CurrentlyWatchingCard } from './CurrentlyWatchingCard';
 import { FinishShowDialog } from './FinishShowDialog';
 import { HistoryDialog } from './HistoryDialog';
 import { Library } from './Library';
@@ -27,9 +28,20 @@ export function DashboardPage() {
   const [historyId, setHistoryId] = useState<string | null>(null);
   const [finishId, setFinishId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [deferredShowIds, setDeferredShowIds] = useState<string[]>([]);
 
-  const queue = useMemo(() => buildQueue(shows, today), [shows, today]);
-  const upNext = getUpNext(queue);
+  const baseQueue = useMemo(() => buildQueue(shows, today), [shows, today]);
+  const queue = useMemo(
+    () => moveDeferredToComingUp(baseQueue, deferredShowIds),
+    [baseQueue, deferredShowIds],
+  );
+  const deferredShowIdSet = useMemo(() => new Set(deferredShowIds), [deferredShowIds]);
+  const upNext = getUpNext(queue.filter((entry) => !deferredShowIdSet.has(entry.show.id)));
+  const comingUp = queue.filter((entry) => entry.show.id !== upNext?.show.id);
+  const currentlyWatching = useMemo(
+    () => shows.filter((show) => show.status === 'currently_watching'),
+    [shows],
+  );
   const historyShow = shows.find((show) => show.id === historyId) ?? null;
   const finishShow = shows.find((show) => show.id === finishId) ?? null;
 
@@ -58,28 +70,34 @@ export function DashboardPage() {
           startedOn: null,
           finishedOn: date,
         });
+        setDeferredShowIds([]);
         return;
       }
       await update(show.id, { status: nextStatus });
     }
     await addWatch(show.id, { startedOn: null, finishedOn: date });
+    setDeferredShowIds([]);
   }
 
-  const changeStatus = (show: Show, next: ShowStatus) => {
+  const changeStatus = async (show: Show, next: ShowStatus) => {
     if (show.status === 'currently_watching' && next !== 'currently_watching') {
       setFinishId(show.id);
-      return Promise.resolve();
+      return;
     }
 
-    return run(() =>
+    const changed = await run(() =>
       update(
         show.id,
         next === 'currently_watching' ? { status: next, startedOn: null } : { status: next },
       ),
     );
+    if (changed) setDeferredShowIds([]);
   };
 
-  const removeShow = (show: Show) => run(() => remove(show.id));
+  const removeShow = async (show: Show) => {
+    const removed = await run(() => remove(show.id));
+    if (removed) setDeferredShowIds([]);
+  };
 
   /** Saves the series form, whether it adds a series or edits one. */
   async function submitForm(input: ShowInput): Promise<void> {
@@ -97,6 +115,7 @@ export function DashboardPage() {
     } else {
       await add(input);
     }
+    setDeferredShowIds([]);
   }
 
   function renderContent() {
@@ -135,24 +154,45 @@ export function DashboardPage() {
     return (
       <div className={styles.grid}>
         <div className={styles.rotation}>
+          {currentlyWatching.length > 0 && (
+            <CurrentlyWatchingCard
+              shows={currentlyWatching}
+              onFinish={(show) => setFinishId(show.id)}
+            />
+          )}
           {upNext ? (
             <>
               <section aria-label="Up next">
                 <UpNextCard
                   key={upNext.show.id}
                   entry={upNext}
-                  onFinished={() => setFinishId(upNext.show.id)}
+                  onStartWatching={() => void changeStatus(upNext.show, 'currently_watching')}
+                  onNotNow={() =>
+                    setDeferredShowIds((ids) => [
+                      upNext.show.id,
+                      ...ids.filter((id) => id !== upNext.show.id),
+                    ])
+                  }
                 />
               </section>
-              <QueueList entries={queue.slice(1)} />
+              <QueueList entries={comingUp} />
             </>
           ) : (
-            <section className={styles.panel}>
-              <h2 className={styles.panelHeading}>Nothing in your rotation yet</h2>
-              <p className={styles.note}>
-                Set a series to Looping in your library and it will show up here.
-              </p>
-            </section>
+            <>
+              <section className={styles.panel}>
+                <h2 className={styles.panelHeading}>
+                  {comingUp.length > 0
+                    ? 'Nothing else in your rotation'
+                    : 'Nothing in your rotation yet'}
+                </h2>
+                <p className={styles.note}>
+                  {comingUp.length > 0
+                    ? 'Choose a series in your library to start watching, or add another to Looping.'
+                    : 'Set a series to Looping in your library and it will show up here.'}
+                </p>
+              </section>
+              {comingUp.length > 0 && <QueueList entries={comingUp} />}
+            </>
           )}
         </div>
 

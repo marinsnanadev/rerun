@@ -6,7 +6,7 @@ import { describeDaysAgo, formatDate } from '../../lib/dates';
 import styles from './QueueList.module.css';
 
 interface QueueListProps {
-  /** Everything in the rotation after the series that is up next. */
+  /** Shows after the current pick, with deferred shows kept at the top. */
   entries: readonly QueueEntry[];
 }
 

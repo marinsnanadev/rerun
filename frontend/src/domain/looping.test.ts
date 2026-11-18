@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildQueue, getUpNext } from './looping';
+import { buildQueue, getUpNext, moveDeferredToComingUp } from './looping';
 import type { Show } from './show';
 
 function show(overrides: Partial<Show> & Pick<Show, 'id' | 'title' | 'finishedOn'>): Show {
@@ -108,5 +108,54 @@ describe('buildQueue', () => {
 describe('getUpNext', () => {
   it('returns null for an empty rotation', () => {
     expect(getUpNext(buildQueue([], TODAY))).toBeNull();
+  });
+});
+
+describe('moveDeferredToComingUp', () => {
+  const queue = buildQueue(
+    [
+      show({ id: 'community', title: 'Community', finishedOn: '2026-09-19' }),
+      show({ id: 'modern-family', title: 'Modern Family', finishedOn: '2026-08-15' }),
+      show({ id: 'the-office', title: 'The Office', finishedOn: '2026-07-10' }),
+    ],
+    TODAY,
+  );
+
+  it('moves the deferred show below the next active show and renumbers the queue', () => {
+    const deferred = moveDeferredToComingUp(queue, ['the-office']);
+
+    expect(deferred.map((entry) => entry.show.title)).toEqual([
+      'Modern Family',
+      'The Office',
+      'Community',
+    ]);
+    expect(deferred.map((entry) => entry.position)).toEqual([1, 2, 3]);
+    expect(getUpNext(deferred)?.show.title).toBe('Modern Family');
+  });
+
+  it('keeps deferred shows at the top of Coming up in defer order', () => {
+    const deferred = moveDeferredToComingUp(queue, [
+      'community',
+      'the-office',
+      'missing-show',
+      'community',
+    ]);
+
+    expect(deferred.map((entry) => entry.show.title)).toEqual([
+      'Modern Family',
+      'Community',
+      'The Office',
+    ]);
+  });
+
+  it('keeps all shows available in Coming up when every show is deferred', () => {
+    const deferred = moveDeferredToComingUp(queue, ['community', 'the-office', 'modern-family']);
+
+    expect(deferred.map((entry) => entry.show.title)).toEqual([
+      'Community',
+      'The Office',
+      'Modern Family',
+    ]);
+    expect(deferred.map((entry) => entry.position)).toEqual([1, 2, 3]);
   });
 });

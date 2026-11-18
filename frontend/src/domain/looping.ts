@@ -35,6 +35,35 @@ export function buildQueue(shows: readonly Show[], today: ISODate): QueueEntry[]
     }));
 }
 
+/** Keeps one active show up next and moves deferred shows to the top of Coming up. */
+export function moveDeferredToComingUp(
+  queue: readonly QueueEntry[],
+  deferredShowIds: readonly string[],
+): QueueEntry[] {
+  const deferredEntries: QueueEntry[] = [];
+  const seen = new Set<string>();
+
+  for (const id of deferredShowIds) {
+    if (seen.has(id)) continue;
+    const entry = queue.find((candidate) => candidate.show.id === id);
+    if (entry) {
+      deferredEntries.push(entry);
+      seen.add(id);
+    }
+  }
+
+  if (deferredEntries.length === 0) return queue.slice();
+
+  const deferredIds = new Set(deferredEntries.map((entry) => entry.show.id));
+  const activeEntries = queue.filter((entry) => !deferredIds.has(entry.show.id));
+  const firstActive = activeEntries[0];
+  const ordered = firstActive
+    ? [firstActive, ...deferredEntries, ...activeEntries.slice(1)]
+    : deferredEntries;
+
+  return ordered.map((entry, index) => ({ ...entry, position: index + 1 }));
+}
+
 /** The show to watch next, or `null` when the rotation is empty. */
 export function getUpNext(queue: readonly QueueEntry[]): QueueEntry | null {
   return queue[0] ?? null;

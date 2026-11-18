@@ -1,6 +1,5 @@
 import uuid
 from datetime import UTC, date, datetime
-from typing import Any
 
 from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, String
 from sqlalchemy.engine import Dialect
@@ -23,7 +22,7 @@ class UTCDateTime(TypeDecorator[datetime]):
             raise ValueError("Datetimes must be timezone-aware.")
         return value.astimezone(UTC)
 
-    def process_result_value(self, value: Any, dialect: Dialect) -> datetime | None:
+    def process_result_value(self, value: datetime | None, dialect: Dialect) -> datetime | None:
         if value is None:
             return None
         if value.tzinfo is None:

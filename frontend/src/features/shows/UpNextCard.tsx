@@ -8,16 +8,17 @@ import styles from './UpNextCard.module.css';
 
 interface UpNextCardProps {
   entry: QueueEntry;
-  onFinished(): void;
+  onStartWatching(): void;
+  onNotNow(): void;
 }
 
-export function UpNextCard({ entry, onFinished }: UpNextCardProps) {
+export function UpNextCard({ entry, onStartWatching, onNotNow }: UpNextCardProps) {
   const { show, daysSince } = entry;
   const titleId = useId();
 
   return (
     <article className={styles.card} aria-labelledby={titleId}>
-      <p className={styles.kicker}>Up next</p>
+      <h2 className={styles.heading}>Up next</h2>
       <h3 id={titleId} className={styles.title}>
         {show.title}
       </h3>
@@ -35,9 +36,14 @@ export function UpNextCard({ entry, onFinished }: UpNextCardProps) {
         </div>
       </dl>
 
-      <Button className={styles.action} onClick={onFinished}>
-        Finished it
-      </Button>
+      <div className={styles.actions}>
+        <Button className={styles.action} onClick={onStartWatching}>
+          Start watching
+        </Button>
+        <Button variant="ghost" className={styles.notNow} onClick={onNotNow}>
+          Not now
+        </Button>
+      </div>
     </article>
   );
 }
