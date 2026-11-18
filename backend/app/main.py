@@ -7,6 +7,8 @@ from sqlalchemy.orm import sessionmaker
 from app import models  # noqa: F401  (registers the tables on Base.metadata)
 from app.config import Settings, get_settings
 from app.db import Base, make_engine
+from app.errors import register_error_handlers
+from app.routers import auth
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -37,7 +39,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
+    api.include_router(auth.router)
+
     app.include_router(api)
+    register_error_handlers(app)
     return app
 
 
