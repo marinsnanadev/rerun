@@ -1,0 +1,26 @@
+.dialog {
+  width: min(34rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 0;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  color: var(--ink);
+  box-shadow: var(--shadow-lift);
+}
+
+.dialog[open] {
+  animation: enter 200ms var(--ease-out);
+}
+
+.dialog::backdrop {
+  background: rgb(17 19 26 / 55%);
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}

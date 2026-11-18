@@ -4,25 +4,31 @@ import { errorMessage } from '../../api';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { buildQueue, getUpNext } from '../../domain/looping';
-import type { Show, ShowStatus } from '../../domain/show';
+import type { Show, ShowInput, ShowStatus } from '../../domain/show';
 import type { ISODate } from '../../lib/dates';
-import { AddShowDialog } from './AddShowDialog';
 import styles from './DashboardPage.module.css';
+import { HistoryDialog } from './HistoryDialog';
 import { Library } from './Library';
 import { QueueList } from './QueueList';
+import { ShowFormDialog } from './ShowFormDialog';
 import { UpNextCard } from './UpNextCard';
 import { useShows } from './useShows';
 import { useToday } from './useToday';
 
+/** The series form is either adding a new series or editing an existing one. */
+type FormTarget = { kind: 'add' } | { kind: 'edit'; show: Show };
+
 export function DashboardPage() {
   const today = useToday();
-  const { shows, status, error, retry, add, update, remove, addWatch } = useShows();
+  const { shows, status, error, retry, add, update, remove, addWatch, removeWatch } = useShows();
 
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState<FormTarget | null>(null);
+  const [historyId, setHistoryId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const queue = useMemo(() => buildQueue(shows, today), [shows, today]);
   const upNext = getUpNext(queue);
+  const historyShow = shows.find((show) => show.id === historyId) ?? null;
 
   /** Runs a change, shows any error, and reports whether it worked. */
   async function run(action: () => Promise<unknown>): Promise<boolean> {
@@ -43,6 +49,15 @@ export function DashboardPage() {
     run(() => update(show.id, { status: next }));
 
   const removeShow = (show: Show) => run(() => remove(show.id));
+
+  /** Saves the series form, whether it adds a series or edits one. */
+  async function submitForm(input: ShowInput): Promise<void> {
+    if (form?.kind === 'edit') {
+      await update(form.show.id, input);
+    } else {
+      await add(input);
+    }
+  }
 
   function renderContent() {
     if (status === 'loading') {
@@ -72,7 +87,7 @@ export function DashboardPage() {
             Start with the ones you keep coming back to. Add them to looping and Rerun will keep
             the order for you.
           </p>
-          <Button onClick={() => setDialogOpen(true)}>Add series</Button>
+          <Button onClick={() => setForm({ kind: 'add' })}>Add series</Button>
         </section>
       );
     }
@@ -102,7 +117,13 @@ export function DashboardPage() {
           )}
         </div>
 
-        <Library shows={shows} onStatusChange={changeStatus} onRemove={removeShow} />
+        <Library
+          shows={shows}
+          onStatusChange={changeStatus}
+          onEdit={(show) => setForm({ kind: 'edit', show })}
+          onHistory={(show) => setHistoryId(show.id)}
+          onRemove={removeShow}
+        />
       </div>
     );
   }
@@ -113,7 +134,7 @@ export function DashboardPage() {
       <main className={styles.main}>
         <div className={styles.titleRow}>
           <h1 className={styles.title}>Your rotation</h1>
-          <Button onClick={() => setDialogOpen(true)}>Add series</Button>
+          <Button onClick={() => setForm({ kind: 'add' })}>Add series</Button>
         </div>
 
         {actionError && (
@@ -125,11 +146,20 @@ export function DashboardPage() {
         {renderContent()}
       </main>
 
-      <AddShowDialog
-        open={dialogOpen}
+      <ShowFormDialog
+        open={form !== null}
         today={today}
-        onClose={() => setDialogOpen(false)}
-        onSubmit={add}
+        show={form?.kind === 'edit' ? form.show : undefined}
+        onClose={() => setForm(null)}
+        onSubmit={submitForm}
+      />
+
+      <HistoryDialog
+        show={historyShow}
+        today={today}
+        onClose={() => setHistoryId(null)}
+        onAddWatch={addWatch}
+        onRemoveWatch={removeWatch}
       />
     </>
   );

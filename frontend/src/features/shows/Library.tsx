@@ -17,10 +17,12 @@ type Filter = 'all' | ShowStatus;
 interface LibraryProps {
   shows: readonly Show[];
   onStatusChange(show: Show, status: ShowStatus): Promise<unknown>;
+  onEdit(show: Show): void;
+  onHistory(show: Show): void;
   onRemove(show: Show): Promise<unknown>;
 }
 
-export function Library({ shows, onStatusChange, onRemove }: LibraryProps) {
+export function Library({ shows, onStatusChange, onEdit, onHistory, onRemove }: LibraryProps) {
   const headingId = useId();
   const [filter, setFilter] = useState<Filter>('all');
 
@@ -80,6 +82,8 @@ export function Library({ shows, onStatusChange, onRemove }: LibraryProps) {
               key={show.id}
               show={show}
               onStatusChange={onStatusChange}
+              onEdit={onEdit}
+              onHistory={onHistory}
               onRemove={onRemove}
             />
           ))}
@@ -92,10 +96,12 @@ export function Library({ shows, onStatusChange, onRemove }: LibraryProps) {
 interface LibraryRowProps {
   show: Show;
   onStatusChange: LibraryProps['onStatusChange'];
+  onEdit: LibraryProps['onEdit'];
+  onHistory: LibraryProps['onHistory'];
   onRemove: LibraryProps['onRemove'];
 }
 
-function LibraryRow({ show, onStatusChange, onRemove }: LibraryRowProps) {
+function LibraryRow({ show, onStatusChange, onEdit, onHistory, onRemove }: LibraryRowProps) {
   const selectId = useId();
   const [confirming, setConfirming] = useState(false);
 
@@ -109,6 +115,7 @@ function LibraryRow({ show, onStatusChange, onRemove }: LibraryRowProps) {
         <p className={styles.title}>{show.title}</p>
         <p className={styles.meta}>
           {GENRE_LABELS[show.genre]}, {when}
+          {show.watchCount > 1 && ` · Watched ${show.watchCount} times`}
         </p>
       </div>
 
@@ -131,6 +138,17 @@ function LibraryRow({ show, onStatusChange, onRemove }: LibraryRowProps) {
             </option>
           ))}
         </select>
+
+        <Button variant="ghost" aria-label={`Edit ${show.title}`} onClick={() => onEdit(show)}>
+          Edit
+        </Button>
+        <Button
+          variant="ghost"
+          aria-label={`History for ${show.title}`}
+          onClick={() => onHistory(show)}
+        >
+          History
+        </Button>
 
         {confirming ? (
           <>

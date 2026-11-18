@@ -1,0 +1,97 @@
+.content {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.heading {
+  font-size: var(--text-xl);
+  overflow-wrap: anywhere;
+}
+
+.subtitle,
+.note {
+  color: var(--ink-muted);
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--line);
+}
+
+.when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.badge {
+  padding: 0.1rem 0.5rem;
+  background: var(--accent-soft);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: var(--text-s);
+  font-weight: 560;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.item .danger {
+  color: var(--danger);
+}
+
+.item .danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.addForm {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+
+.subheading {
+  font-size: var(--text-m);
+}
+
+.dates {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 30rem) {
+  .dates {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.alert {
+  padding: var(--space-3) var(--space-4);
+  background: var(--danger-soft);
+  border-radius: var(--radius-s);
+  color: var(--danger);
+  font-size: var(--text-s);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+}
