@@ -1,0 +1,23 @@
+# Runs the whole app: the web app on http://localhost:8080 and the API behind it.
+#   docker compose up --build
+services:
+  backend:
+    build: ./backend
+    environment:
+      # Set to true when the site is served over HTTPS.
+      RERUN_COOKIE_SECURE: ${RERUN_COOKIE_SECURE:-false}
+    volumes:
+      - rerun-data:/data
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  rerun-data:

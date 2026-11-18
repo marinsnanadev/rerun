@@ -54,6 +54,14 @@ The dev server forwards `/api` to the backend, so the browser sees a single orig
 
 Set `VITE_API_MOCK=true` in `frontend/.env` and restart `npm run dev`. Everything is then stored in your browser's `localStorage`, and new accounts start with a few sample series. Mock passwords are stored as plain text, so don't reuse a real one.
 
+### Run with Docker
+
+```bash
+docker compose up --build
+```
+
+Open http://localhost:8080. The web app is served by nginx, which forwards `/api` to the backend, and the SQLite database lives in a Docker volume named `rerun-data`, so it survives restarts. Stop with `Ctrl+C`; add `-v` to `docker compose down` to delete the data too.
+
 ### Build for production
 
 ```bash
@@ -62,19 +70,23 @@ npm run build     # typechecks, then writes the site to frontend/dist
 npm run preview   # serves the build at http://localhost:4173
 ```
 
-## Tests
+## Tests and checks
 
 ```bash
-cd backend && pytest
-cd frontend && npm test
+cd backend && pytest && ruff check . && mypy app
+cd frontend && npm test && npm run lint && npm run typecheck
 ```
 
 ## Repository layout
 
 ```
 rerun/
-├── frontend/   React + TypeScript single-page app (Vite)
-└── backend/    FastAPI + SQLAlchemy API
+├── frontend/            React + TypeScript single-page app (Vite)
+├── backend/             FastAPI + SQLAlchemy API
+├── docker-compose.yml   Runs both together
+└── .github/workflows/   Continuous integration
 ```
+
+GitHub Actions runs all of these, and builds both Docker images, on every push and pull request.
 
 See [frontend/README.md](frontend/README.md) and [backend/README.md](backend/README.md) for configuration, scripts and how each side is organized.
